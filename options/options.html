@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Magic Fill Pro - Settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-content">
+        <div class="header-icon">⚡</div>
+        <div class="header-text">
+          <h1>Magic Fill Pro</h1>
+          <p>Configure your AI-powered form filler</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Navigation -->
+    <div class="nav-tabs">
+      <button class="nav-tab active" data-tab="profiles">📋 Profiles</button>
+      <button class="nav-tab" data-tab="api">🔑 API Keys</button>
+      <button class="nav-tab" data-tab="settings">⚙️ Settings</button>
+      <button class="nav-tab" data-tab="advanced">🚀 Advanced</button>
+    </div>
+
+    <!-- Profiles Tab -->
+    <div class="tab-content active" id="profiles-tab">
+      <div class="section">
+        <div class="section-header">
+          <h2>Profile Management</h2>
+          <button class="btn btn-primary" id="createProfileBtn">
+            <span class="btn-icon">+</span>
+            New Profile
+          </button>
+        </div>
+
+        <div class="profiles-grid" id="profilesGrid">
+          <!-- Profiles will be loaded here -->
+        </div>
+      </div>
+
+      <!-- Profile Editor -->
+      <div class="section" id="profileEditor" style="display: none;">
+        <div class="section-header">
+          <h2 id="editorTitle">Edit Profile</h2>
+          <div>
+            <button class="btn btn-secondary" id="cancelEditBtn">Cancel</button>
+            <button class="btn btn-primary" id="saveProfileBtn">Save Profile</button>
+          </div>
+        </div>
+
+        <div class="profile-editor">
+          <div class="form-group">
+            <label>Profile Name</label>
+            <input type="text" id="profileName" placeholder="Enter profile name">
+          </div>
+
+          <div class="form-group">
+            <label>Profile Fields</label>
+            
+            <!-- Field Templates -->
+            <div class="field-templates">
+              <h4>Quick Add</h4>
+              <div class="template-grid">
+                <button class="template-btn" data-type="firstname">👤 First Name</button>
+                <button class="template-btn" data-type="lastname">👥 Last Name</button>
+                <button class="template-btn" data-type="fullname">📛 Full Name</button>
+                <button class="template-btn" data-type="email">📧 Email</button>
+                <button class="template-btn" data-type="phone">📱 Phone</button>
+                <button class="template-btn" data-type="address">🏠 Address</button>
+                <button class="template-btn" data-type="city">🏙️ City</button>
+                <button class="template-btn" data-type="state">🗺️ State</button>
+                <button class="template-btn" data-type="zip">📮 ZIP</button>
+                <button class="template-btn" data-type="country">🌍 Country</button>
+                <button class="template-btn" data-type="company">🏢 Company</button>
+                <button class="template-btn" data-type="website">🌐 Website</button>
+                <button class="template-btn" data-type="dob">🎂 DOB</button>
+                <button class="template-btn" data-type="otp">🔐 OTP</button>
+              </div>
+            </div>
+
+            <!-- Fields Container -->
+            <div id="fieldsContainer" class="fields-container"></div>
+
+            <button class="btn btn-secondary" id="addFieldBtn">
+              <span class="btn-icon">+</span>
+              Add Custom Field
+            </button>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn-outline" id="deleteProfileBtn" style="display: none;">Delete Profile</button>
+            <button class="btn btn-outline" id="duplicateProfileBtn" style="display: none;">Duplicate</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- API Keys Tab -->
+    <div class="tab-content" id="api-tab">
+      <div class="section">
+        <div class="section-header">
+          <h2>API Key Management</h2>
+          <button class="btn btn-primary" id="testAllKeysBtn">
+            <span class="btn-icon">✓</span>
+            Test All
+          </button>
+        </div>
+
+        <div class="api-providers">
+          <!-- OpenAI -->
+          <div class="api-provider">
+            <div class="provider-header">
+              <div class="provider-info">
+                <span class="provider-icon">🤖</span>
+                <h3>OpenAI (ChatGPT)</h3>
+                <span class="provider-badge" id="openai-badge">0 keys</span>
+              </div>
+              <button class="btn btn-text" onclick="toggleProvider('openai')">▼</button>
+            </div>
+            
+            <div class="provider-keys" id="openai-keys">
+              <div class="keys-header">
+                <span>API Keys (one per line)</span>
+                <span class="key-count" id="openai-count">0/∞</span>
+              </div>
+              <textarea id="openai-keys-input" class="keys-textarea" placeholder="sk-xxxxxxxxxxxx&#10;sk-xxxxxxxxxxxx"></textarea>
+              <div class="keys-actions">
+                <button class="btn btn-small" onclick="testProvider('openai')">Test Keys</button>
+                <button class="btn btn-small" onclick="clearProvider('openai')">Clear</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Gemini -->
+          <div class="api-provider">
+            <div class="provider-header">
+              <div class="provider-info">
+                <span class="provider-icon">🔮</span>
+                <h3>Google Gemini</h3>
+                <span class="provider-badge" id="gemini-badge">0 keys</span>
+              </div>
+              <button class="btn btn-text" onclick="toggleProvider('gemini')">▼</button>
+            </div>
+            
+            <div class="provider-keys" id="gemini-keys">
+              <div class="keys-header">
+                <span>API Keys (one per line)</span>
+                <span class="key-count" id="gemini-count">0/∞</span>
+              </div>
+              <textarea id="gemini-keys-input" class="keys-textarea" placeholder="AIzaSyxxxxxxxxxxxx"></textarea>
+              <div class="keys-actions">
+                <button class="btn btn-small" onclick="testProvider('gemini')">Test Keys</button>
+                <button class="btn btn-small" onclick="clearProvider('gemini')">Clear</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Claude -->
+          <div class="api-provider">
+            <div class="provider-header">
+              <div class="provider-info">
+                <span class="provider-icon">🦜</span>
+                <h3>Anthropic Claude</h3>
+                <span class="provider-badge" id="claude-badge">0 keys</span>
+              </div>
+              <button class="btn btn-text" onclick="toggleProvider('claude')">▼</button>
+            </div>
+            
+            <div class="provider-keys" id="claude-keys">
+              <div class="keys-header">
+                <span>API Keys (one per line)</span>
+                <span class="key-count" id="claude-count">0/∞</span>
+              </div>
+              <textarea id="claude-keys-input" class="keys-textarea" placeholder="sk-ant-xxxxxxxxxxxx"></textarea>
+              <div class="keys-actions">
+                <button class="btn btn-small" onclick="testProvider('claude')">Test Keys</button>
+                <button class="btn btn-small" onclick="clearProvider('claude')">Clear</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Grok -->
+          <div class="api-provider">
+            <div class="provider-header">
+              <div class="provider-info">
+                <span class="provider-icon">🚀</span>
+                <h3>xAI Grok</h3>
+                <span class="provider-badge" id="grok-badge">0 keys</span>
+              </div>
+              <button class="btn btn-text" onclick="toggleProvider('grok')">▼</button>
+            </div>
+            
+            <div class="provider-keys" id="grok-keys">
+              <div class="keys-header">
+                <span>API Keys (one per line)</span>
+                <span class="key-count" id="grok-count">0/∞</span>
+              </div>
+              <textarea id="grok-keys-input" class="keys-textarea" placeholder="grok-xxxxxxxxxxxx"></textarea>
+              <div class="keys-actions">
+                <button class="btn btn-small" onclick="testProvider('grok')">Test Keys</button>
+                <button class="btn btn-small" onclick="clearProvider('grok')">Clear</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Key Status -->
+      <div class="section">
+        <h2>Key Health Status</h2>
+        <div class="key-status-grid" id="keyStatus">
+          <!-- Status will be loaded here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Tab -->
+    <div class="tab-content" id="settings-tab">
+      <div class="settings-grid">
+        <div class="setting-card">
+          <h3>General Settings</h3>
+          
+          <div class="setting-item">
+            <div class="setting-info">
+              <div class="setting-title">Auto-fill on page load</div>
+              <div class="setting-desc">Automatically fill forms when page loads</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="autoFillOnLoad">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <div class="setting-title">Respect user edits</div>
+              <div class="setting-desc">Don't overwrite manually entered data</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="respectUserEdits" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <div class="setting-title">Fill optional fields</div>
+              <div class="setting-desc">Also fill non-required form fields</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="fillOptionalFields">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <h3>AI Settings</h3>
+          
+          <div class="setting-item">
+            <div class="setting-info">
+              <div class="setting-title">Default AI Provider</div>
+              <div class="setting-desc">Primary AI model to use</div>
+            </div>
+            <select id="defaultProvider" class="setting-select">
+              <option value="openai">OpenAI (ChatGPT)</option>
+              <option value="gemini">Google Gemini</option>
+              <option value="claude">Anthropic Claude</option>
+              <option value="grok">xAI Grok</option>
+            </select>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <div class="setting-title">Key Rotation Strategy</div>
+              <div class="setting-desc">How to use multiple API keys</div>
+            </div>
+            <select id="rotationStrategy" class="setting-select">
+              <option value="failover">Failover (try next on failure)</option>
+              <option value="roundrobin">Round Robin (rotate evenly)</option>
+              <option value="balanced">Balanced (least used first)</option>
+            </select>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <div class="setting-title">Confidence Threshold</div>
+              <div class="setting-desc">Minimum confidence to auto-fill</div>
+            </div>
+            <div class="setting-slider">
+              <input type="range" id="confidenceThreshold" min="0" max="100" value="70">
+              <span id="thresholdDisplay">70%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <h3>Clipboard Settings</h3>
+          
+          <div class="setting-item">
+            <div class="setting-info">
+              <div class="setting-title">Monitor clipboard</div>
+              <div class="setting-desc">Watch for copied OTP codes</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="clipboardMonitor" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <div class="setting-title">Auto-fill OTP</div>
+              <div class="setting-desc">Automatically fill OTP fields</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="autoFillOtp" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <div class="setting-title">Clipboard Time Limit</div>
+              <div class="setting-desc">How long to remember clipboard data</div>
+            </div>
+            <select id="clipboardTimeLimit" class="setting-select">
+              <option value="1">1 minute</option>
+              <option value="5" selected>5 minutes</option>
+              <option value="10">10 minutes</option>
+              <option value="30">30 minutes</option>
+              <option value="60">1 hour</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Import / Export</h2>
+        <div class="import-export">
+          <button class="btn btn-secondary" id="exportDataBtn">
+            <span class="btn-icon">⬇️</span>
+            Export All Data
+          </button>
+          <button class="btn btn-secondary" id="importDataBtn">
+            <span class="btn-icon">⬆️</span>
+            Import Data
+          </button>
+          <button class="btn btn-outline" id="resetDataBtn">
+            <span class="btn-icon">⚠️</span>
+            Reset to Default
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Advanced Tab -->
+    <div class="tab-content" id="advanced-tab">
+      <div class="section">
+        <h2>Field Detection Patterns</h2>
+        <textarea id="detectionPatterns" class="code-textarea" rows="10"></textarea>
+        <button class="btn btn-primary" id="savePatternsBtn">Save Patterns</button>
+      </div>
+
+      <div class="section">
+        <h2>Debug Logs</h2>
+        <div class="logs-container" id="logsContainer">
+          <!-- Logs will be shown here -->
+        </div>
+        <button class="btn btn-secondary" id="clearLogsBtn">Clear Logs</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../utils.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

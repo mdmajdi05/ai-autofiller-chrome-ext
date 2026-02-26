@@ -1,0 +1,74 @@
+{
+  "manifest_version": 3,
+  "name": "Magic Fill Pro - AI Auto Filler",
+  "version": "3.0.0",
+  "description": "Advanced AI-powered form filler with multi-model support, smart field detection, and intelligent profile management",
+  "author": "Md Khaleeque Akhtar",
+  
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "clipboardRead",
+    "clipboardWrite",
+    "tabs"
+  ],
+  
+  "host_permissions": [
+    "<all_urls>",
+    "https://api.openai.com/*",
+    "https://generativelanguage.googleapis.com/*",
+    "https://api.anthropic.com/*",
+    "https://api.x.ai/*"
+  ],
+  
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Magic Fill Pro",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  
+  "options_page": "options/options.html",
+  
+  "commands": {
+    "trigger-fill": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+F",
+        "mac": "Command+Shift+F"
+      },
+      "description": "Trigger auto-fill on current page"
+    },
+    "open-settings": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S",
+        "mac": "Command+Shift+S"
+      },
+      "description": "Open settings"
+    }
+  },
+  
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
