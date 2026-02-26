@@ -8,137 +8,48 @@
 </head>
 <body>
   <div class="container">
-    <!-- Header -->
     <div class="header">
-      <div class="header-icon">
-        <span class="icon">⚡</span>
-      </div>
-      <div class="header-text">
-        <h1>Magic Fill Pro</h1>
-        <p>AI-Powered Form Filler</p>
-      </div>
+      <div class="header-icon"><span class="icon">⚡</span></div>
+      <div class="header-text"><h1>Magic Fill Pro</h1><p>AI-Powered Form Filler</p></div>
       <div class="header-status" id="statusIndicator"></div>
     </div>
-
-    <!-- Quick Actions -->
     <div class="quick-actions">
-      <button class="btn btn-primary" id="fillBtn">
-        <span class="btn-icon">🚀</span>
-        <span>Fill Current Page</span>
-      </button>
-      
-      <button class="btn btn-icon-only" id="refreshBtn" title="Refresh">
-        <span class="btn-icon">↻</span>
-      </button>
+      <button class="btn btn-primary" id="fillBtn"><span class="btn-icon">🚀</span><span>Fill Current Page</span></button>
+      <button class="btn btn-icon-only" id="refreshBtn" title="Refresh"><span class="btn-icon">↻</span></button>
     </div>
-
-    <!-- Toggles -->
     <div class="toggles">
       <div class="toggle-item">
-        <div class="toggle-label">
-          <span class="label-icon">⚡</span>
-          <span>Extension</span>
-        </div>
-        <label class="switch">
-          <input type="checkbox" id="extensionToggle">
-          <span class="slider"></span>
-        </label>
+        <div class="toggle-label"><span class="label-icon">⚡</span><span>Extension</span></div>
+        <label class="switch"><input type="checkbox" id="extensionToggle"><span class="slider"></span></label>
       </div>
-      
       <div class="toggle-item">
-        <div class="toggle-label">
-          <span class="label-icon">🤖</span>
-          <span>AI Mode</span>
-          <span class="badge" id="aiBadge">Off</span>
-        </div>
-        <label class="switch">
-          <input type="checkbox" id="aiToggle">
-          <span class="slider"></span>
-        </label>
+        <div class="toggle-label"><span class="label-icon">🤖</span><span>AI Mode</span><span class="badge" id="aiBadge">Off</span></div>
+        <label class="switch"><input type="checkbox" id="aiToggle"><span class="slider"></span></label>
       </div>
     </div>
-
-    <!-- Profile Section -->
     <div class="section">
-      <div class="section-header">
-        <h3>Active Profile</h3>
-        <button class="btn btn-text" id="manageProfilesBtn">Manage</button>
-      </div>
-      
-      <select id="profileSelect" class="profile-select">
-        <option value="">Loading profiles...</option>
-      </select>
-      
-      <div class="profile-preview" id="profilePreview">
-        <!-- Profile preview will be shown here -->
-      </div>
+      <div class="section-header"><h3>Active Profile</h3><button class="btn btn-text" id="manageProfilesBtn">Manage</button></div>
+      <select id="profileSelect" class="profile-select"><option value="">Loading profiles...</option></select>
+      <div class="profile-preview" id="profilePreview"></div>
     </div>
-
-    <!-- Stats Grid -->
     <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-value" id="profileCount">0</div>
-        <div class="stat-label">Profiles</div>
-      </div>
-      
-      <div class="stat-card">
-        <div class="stat-value" id="apiCount">0</div>
-        <div class="stat-label">API Keys</div>
-      </div>
-      
-      <div class="stat-card">
-        <div class="stat-value" id="todayUsage">0</div>
-        <div class="stat-label">Today's Usage</div>
-      </div>
-      
-      <div class="stat-card">
-        <div class="stat-value" id="fieldsFilled">0</div>
-        <div class="stat-label">Fields</div>
-      </div>
+      <div class="stat-card"><div class="stat-value" id="profileCount">0</div><div class="stat-label">Profiles</div></div>
+      <div class="stat-card"><div class="stat-value" id="apiCount">0</div><div class="stat-label">API Keys</div></div>
+      <div class="stat-card"><div class="stat-value" id="todayUsage">0</div><div class="stat-label">Today's Usage</div></div>
+      <div class="stat-card"><div class="stat-value" id="fieldsFilled">0</div><div class="stat-label">Fields</div></div>
     </div>
-
-    <!-- Quick Settings -->
     <div class="quick-settings">
       <h3>Quick Settings</h3>
-      
-      <div class="setting-item">
-        <span>Respect User Edits</span>
-        <label class="switch small">
-          <input type="checkbox" id="respectEditsToggle" checked>
-          <span class="slider"></span>
-        </label>
-      </div>
-      
-      <div class="setting-item">
-        <span>Fill Optional Fields</span>
-        <label class="switch small">
-          <input type="checkbox" id="fillOptionalToggle">
-          <span class="slider"></span>
-        </label>
-      </div>
-      
-      <div class="setting-item">
-        <span>Confidence Threshold</span>
-        <span class="threshold-value" id="thresholdValue">70%</span>
-      </div>
-      
+      <div class="setting-item"><span>Respect User Edits</span><label class="switch small"><input type="checkbox" id="respectEditsToggle" checked><span class="slider"></span></label></div>
+      <div class="setting-item"><span>Fill Optional Fields</span><label class="switch small"><input type="checkbox" id="fillOptionalToggle"><span class="slider"></span></label></div>
+      <div class="setting-item"><span>Confidence Threshold</span><span class="threshold-value" id="thresholdValue">70%</span></div>
       <input type="range" id="thresholdSlider" min="0" max="100" value="70" class="slider">
     </div>
-
-    <!-- Footer Actions -->
     <div class="footer">
-      <button class="btn btn-secondary" id="settingsBtn">
-        <span class="btn-icon">⚙️</span>
-        <span>Settings</span>
-      </button>
-      
-      <button class="btn btn-secondary" id="dashboardBtn">
-        <span class="btn-icon">📊</span>
-        <span>Dashboard</span>
-      </button>
+      <button class="btn btn-secondary" id="settingsBtn"><span class="btn-icon">⚙️</span><span>Settings</span></button>
+      <button class="btn btn-secondary" id="dashboardBtn"><span class="btn-icon">📊</span><span>Dashboard</span></button>
     </div>
   </div>
-
   <script src="../utils.js"></script>
   <script src="popup.js"></script>
 </body>

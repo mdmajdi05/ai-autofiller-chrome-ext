@@ -4,7 +4,7 @@
   "version": "3.0.0",
   "description": "Advanced AI-powered form filler with multi-model support, smart field detection, and intelligent profile management",
   "author": "Md Khaleeque Akhtar",
-  
+
   "permissions": [
     "storage",
     "activeTab",
@@ -13,30 +13,36 @@
     "clipboardWrite",
     "tabs"
   ],
-  
+
   "host_permissions": [
     "<all_urls>",
     "https://api.openai.com/*",
     "https://generativelanguage.googleapis.com/*",
     "https://api.anthropic.com/*",
-    "https://api.x.ai/*"
+    "https://api.x.ai/*",
+    "https://api.deepseek.com/*",
+    "https://api.mistral.ai/*"
   ],
-  
+
   "background": {
-    "service_worker": "background.js",
-    "type": "module"
+    "service_worker": "background.js"
   },
-  
+
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"],
+      "js": [
+        "utils.js",
+        "field-detector.js",
+        "ai-manager.js",
+        "content.js"
+      ],
       "css": ["styles.css"],
       "run_at": "document_idle",
       "all_frames": true
     }
   ],
-  
+
   "action": {
     "default_popup": "popup/popup.html",
     "default_title": "Magic Fill Pro",
@@ -46,9 +52,14 @@
       "128": "icons/icon128.png"
     }
   },
-  
+
   "options_page": "options/options.html",
-  
+
+  "web_accessible_resources": [{
+    "resources": ["dashboard/dashboard.html", "icons/*"],
+    "matches": ["<all_urls>"]
+  }],
+
   "commands": {
     "trigger-fill": {
       "suggested_key": {
@@ -65,7 +76,7 @@
       "description": "Open settings"
     }
   },
-  
+
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",

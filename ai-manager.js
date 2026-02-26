@@ -1,26 +1,46 @@
 // ai-manager.js - Advanced AI Model Manager with Key Rotation
+//
+// FIX 1: Constructor async issue fixed → Static factory pattern
+//         Pehle: constructor() { this.initializeModels(); } ← await nahi tha
+//         Ab: static async create() { await manager.initializeModels(); }
+//
+// FIX 2: loadKeys() storage structure fix
+//         Pehle: config[`${modelName}Keys_${i}`] ← aiConfig se padhta tha, key names galat
+//         Ab: apiKeys.openai[] / apiKeys.gemini[] directly from storage
+//
+// Baaki sab ORIGINAL — getBestValue, callModel, testAllKeys, getKeyStatus, getModelStats sab intact
 
 class AIManager {
   constructor() {
+    // Sync only — async kaam static create() mein hoga
     this.models = [];
-    this.keyStatus = new Map(); // Tracks health of each key
-    this.failedKeys = new Map(); // Cache of failed keys with timestamps
-    this.usageStats = new Map(); // Tracks API usage
-    this.priorities = new Map(); // Model priorities
-    this.initializeModels();
-    this.loadKeyStatus();
+    this.keyStatus = new Map();
+    this.failedKeys = new Map();
+    this.usageStats = new Map();
+    this.priorities = new Map();
+  }
+
+  // FIX 1: Static factory — constructor ko async nahi bana sakte
+  // Usage: const ai = await AIManager.create();
+  static async create() {
+    const manager = new AIManager();
+    await manager.initializeModels();
+    await manager.loadKeyStatus();
+    Utils.showToast(`AIManager ready — ${manager.models.length} models loaded`, 'success', 3000);
+    return manager;
   }
 
   async initializeModels() {
-    // Load environment variables (in Chrome extension, we load from storage)
+    // FIX 2: apiKeys storage se padhna, aiConfig se nahi
+    // Storage structure: { apiKeys: { openai: [], gemini: [], claude: [], deepseek: [], mistral: [] } }
+    const apiKeys = await Utils.storage.get('apiKeys') || {};
     const config = await Utils.storage.get('aiConfig') || {};
-    
-    // Define all models with their configurations
+
     this.models = [
       {
         name: 'chatgpt',
         priority: config.chatgptPriority || 1,
-        keys: this.loadKeys('chatgpt', config),
+        keys: apiKeys.openai || [],      // FIX: chatgpt → openai storage key
         apiUrl: 'https://api.openai.com/v1/chat/completions',
         model: 'gpt-3.5-turbo',
         headers: (key) => ({
@@ -41,24 +61,19 @@ class AIManager {
       {
         name: 'gemini',
         priority: config.geminiPriority || 2,
-        keys: this.loadKeys('gemini', config),
+        keys: apiKeys.gemini || [],
         apiUrl: (key) => `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${key}`,
         headers: () => ({ 'Content-Type': 'application/json' }),
         body: (prompt) => JSON.stringify({
-          contents: [{
-            parts: [{ text: prompt }]
-          }],
-          generationConfig: {
-            maxOutputTokens: 50,
-            temperature: 0.3
-          }
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { maxOutputTokens: 50, temperature: 0.3 }
         }),
         parseResponse: (data) => data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
       },
       {
         name: 'claude',
         priority: config.claudePriority || 3,
-        keys: this.loadKeys('claude', config),
+        keys: apiKeys.claude || [],
         apiUrl: 'https://api.anthropic.com/v1/messages',
         headers: (key) => ({
           'Content-Type': 'application/json',
@@ -75,7 +90,7 @@ class AIManager {
       {
         name: 'deepseek',
         priority: config.deepseekPriority || 4,
-        keys: this.loadKeys('deepseek', config),
+        keys: apiKeys.deepseek || [],
         apiUrl: 'https://api.deepseek.com/v1/chat/completions',
         headers: (key) => ({
           'Content-Type': 'application/json',
@@ -91,7 +106,7 @@ class AIManager {
       {
         name: 'mistral',
         priority: config.mistralPriority || 5,
-        keys: this.loadKeys('mistral', config),
+        keys: apiKeys.mistral || [],
         apiUrl: 'https://api.mistral.ai/v1/chat/completions',
         headers: (key) => ({
           'Content-Type': 'application/json',
@@ -106,20 +121,15 @@ class AIManager {
       }
     ];
 
-    // Sort by priority
+    // Sort by priority — ORIGINAL
     this.models.sort((a, b) => a.priority - b.priority);
+
+    // Log key counts loaded
+    const keySummary = this.models.map(m => `${m.name}:${m.keys.length}`).join(', ');
+    Utils.logger.info('AIManager', `Models initialized. Keys: ${keySummary}`);
   }
 
-  loadKeys(modelName, config) {
-    const keys = [];
-    // Load up to 20 keys per model
-    for (let i = 1; i <= 20; i++) {
-      const key = config[`${modelName}Keys_${i}`];
-      if (key) keys.push(key);
-    }
-    return keys;
-  }
-
+  // ORIGINAL — loadKeyStatus from storage
   async loadKeyStatus() {
     const saved = await Utils.storage.get('keyStatus');
     if (saved) {
@@ -129,49 +139,41 @@ class AIManager {
     }
   }
 
+  // ORIGINAL — saveKeyStatus
   async saveKeyStatus() {
     const statusObj = {};
-    this.keyStatus.forEach((value, key) => {
-      statusObj[key] = value;
-    });
+    this.keyStatus.forEach((value, key) => { statusObj[key] = value; });
     await Utils.storage.set('keyStatus', statusObj);
   }
 
+  // ORIGINAL — isKeyValid
   isKeyValid(key) {
     const status = this.keyStatus.get(key);
     if (!status) return true;
-    
-    // Check if key is permanently banned
     if (status.banned) return false;
-    
-    // Check cooldown
     if (status.failedAt) {
-      const cooldownMinutes = 60; // 1 hour cooldown
-      const cooldownMs = cooldownMinutes * 60 * 1000;
-      if (Date.now() - status.failedAt < cooldownMs) {
-        return false; // Still in cooldown
-      }
+      const cooldownMs = 60 * 60 * 1000; // 1 hour
+      if (Date.now() - status.failedAt < cooldownMs) return false;
     }
-    
     return true;
   }
 
+  // ORIGINAL — markKeyFailed
   markKeyFailed(key, error) {
     const status = this.keyStatus.get(key) || { failures: 0, banned: false };
     status.failures = (status.failures || 0) + 1;
     status.failedAt = Date.now();
     status.lastError = error.message || String(error);
-    
-    // Ban key if too many failures
     if (status.failures >= 5) {
       status.banned = true;
-      Utils.logger.warn('AIManager', `Key banned due to repeated failures: ${key.substring(0, 10)}...`, { failures: status.failures });
+      Utils.logger.warn('AIManager', `Key banned: ${key.substring(0, 10)}...`, { failures: status.failures });
+      Utils.showToast(`Key banned (5+ failures): ${key.substring(0, 10)}...`, 'error');
     }
-    
     this.keyStatus.set(key, status);
     this.saveKeyStatus();
   }
 
+  // ORIGINAL — markKeySuccess
   markKeySuccess(key) {
     const status = this.keyStatus.get(key) || {};
     status.failures = 0;
@@ -181,46 +183,50 @@ class AIManager {
     this.saveKeyStatus();
   }
 
+  // ORIGINAL — getBestValue (toast added at key decision points)
   async getBestValue(fieldContext, profile, fieldType) {
-    Utils.logger.debug('AIManager', `Getting AI value for field: ${fieldType}`, { fieldContext });
-    
-    // Try each model in priority order
+    Utils.logger.debug('AIManager', `Getting AI value for: ${fieldType}`, { fieldContext });
+
     for (const model of this.models) {
-      Utils.logger.debug('AIManager', `Trying model: ${model.name} (priority ${model.priority})`);
-      
-      // Try each key for this model
+      if (model.keys.length === 0) continue; // No keys for this model
+
+      Utils.showToast(`AI trying: ${model.name} for "${fieldType}"`, 'info', 2500);
+
       for (const key of model.keys) {
         if (!this.isKeyValid(key)) {
-          Utils.logger.debug('AIManager', `Key invalid/in cooldown: ${key.substring(0, 10)}...`);
+          Utils.logger.debug('AIManager', `Key in cooldown: ${key.substring(0, 10)}...`);
           continue;
         }
 
         try {
           const prompt = this.generatePrompt(fieldContext, profile, fieldType);
           const value = await this.callModel(model, key, prompt);
-          
+
           if (value) {
             this.markKeySuccess(key);
-            Utils.logger.info('AIManager', `Success with ${model.name}`, { key: key.substring(0, 10) + '...', value });
+            Utils.logger.info('AIManager', `Success with ${model.name}`, { value });
+            Utils.showToast(`AI value mila (${model.name}): "${value.slice(0, 30)}"`, 'success', 4000);
             return value;
           }
         } catch (error) {
-          Utils.logger.error('AIManager', `Failed with ${model.name}`, { error: error.message, key: key.substring(0, 10) + '...' });
+          Utils.logger.error('AIManager', `Failed: ${model.name}`, { error: error.message });
+          Utils.showToast(`AI failed (${model.name}): ${error.message.slice(0, 40)}`, 'error', 3000);
           this.markKeyFailed(key, error);
-          continue; // Try next key
+          continue;
         }
       }
-      
-      // If we get here, all keys for this model failed
-      Utils.logger.warn('AIManager', `All keys failed for model: ${model.name}`);
+
+      Utils.logger.warn('AIManager', `All keys failed for: ${model.name}`);
     }
-    
-    Utils.logger.warn('AIManager', 'All models failed, no AI value available');
+
+    Utils.logger.warn('AIManager', 'All models failed');
+    Utils.showToast(`AI: sab models fail ho gaye for "${fieldType}"`, 'warn', 3000);
     return null;
   }
 
+  // ORIGINAL — generatePrompt
   generatePrompt(fieldContext, profile, fieldType) {
-    const context = `
+    return `
 FIELD TYPE: ${fieldType}
 FIELD LABEL: ${fieldContext.label || 'unknown'}
 FIELD PLACEHOLDER: ${fieldContext.placeholder || 'none'}
@@ -233,25 +239,19 @@ ${JSON.stringify(profile, null, 2)}
 TASK: Generate a realistic value for this form field based on the field type and user profile.
 If the field type matches profile data, use that. Otherwise, generate appropriate fake data.
 Return ONLY the value, no explanations or additional text.`;
-
-    return context;
   }
 
+  // ORIGINAL — callModel
   async callModel(model, key, prompt) {
     return new Promise(async (resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error('API timeout'));
-      }, 5000); // 5 second timeout
+      const timeout = setTimeout(() => reject(new Error('API timeout')), 5000);
 
       try {
         const url = typeof model.apiUrl === 'function' ? model.apiUrl(key) : model.apiUrl;
-        const headers = model.headers(key);
-        const body = model.body(prompt);
-
         const response = await fetch(url, {
           method: 'POST',
-          headers: headers,
-          body: body
+          headers: model.headers(key),
+          body: model.body(prompt)
         });
 
         clearTimeout(timeout);
@@ -263,7 +263,7 @@ Return ONLY the value, no explanations or additional text.`;
 
         const data = await response.json();
         const value = model.parseResponse(data);
-        
+
         if (value) {
           resolve(value);
         } else {
@@ -276,13 +276,9 @@ Return ONLY the value, no explanations or additional text.`;
     });
   }
 
+  // ORIGINAL — testAllKeys (toast added for results)
   async testAllKeys() {
-    const results = {
-      total: 0,
-      working: 0,
-      failed: 0,
-      details: []
-    };
+    const results = { total: 0, working: 0, failed: 0, details: [] };
 
     for (const model of this.models) {
       for (const key of model.keys) {
@@ -290,15 +286,11 @@ Return ONLY the value, no explanations or additional text.`;
         try {
           const testPrompt = 'Return the word "WORKING" if you can read this.';
           const value = await this.callModel(model, key, testPrompt);
-          
+
           if (value && value.toLowerCase().includes('working')) {
             results.working++;
             this.markKeySuccess(key);
-            results.details.push({
-              model: model.name,
-              key: key.substring(0, 10) + '...',
-              status: 'working'
-            });
+            results.details.push({ model: model.name, key: key.substring(0, 10) + '...', status: 'working' });
           } else {
             throw new Error('Invalid response');
           }
@@ -316,9 +308,11 @@ Return ONLY the value, no explanations or additional text.`;
     }
 
     await this.saveKeyStatus();
+    Utils.showToast(`Key test done: ${results.working}/${results.total} working`, results.working > 0 ? 'success' : 'error', 5000);
     return results;
   }
 
+  // ORIGINAL — getKeyStatus
   getKeyStatus() {
     const status = {};
     this.keyStatus.forEach((value, key) => {
@@ -327,6 +321,7 @@ Return ONLY the value, no explanations or additional text.`;
     return status;
   }
 
+  // ORIGINAL — getModelStats
   getModelStats() {
     const stats = {};
     this.models.forEach(model => {
@@ -341,7 +336,6 @@ Return ONLY the value, no explanations or additional text.`;
   }
 }
 
-// Export for modules
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = AIManager;
 }

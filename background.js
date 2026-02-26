@@ -1,5 +1,7 @@
 // ============================================
 // BACKGROUND.JS - Service Worker
+// FIX: commands handler mein sare 4 files inject karta hai
+// Baaki sab ORIGINAL as-is
 // ============================================
 
 const DEFAULT_SETTINGS = {
@@ -35,10 +37,9 @@ const DEFAULT_PROFILE = {
   updatedAt: new Date().toISOString()
 };
 
-// Initialize on install
+// ORIGINAL — initialize on install
 chrome.runtime.onInstalled.addListener(async (details) => {
   console.log('Magic Fill Pro installed:', details.reason);
-  
   if (details.reason === 'install') {
     await initializeStorage();
   }
@@ -53,19 +54,20 @@ async function initializeStorage() {
       openai: [],
       gemini: [],
       claude: [],
-      grok: []
+      grok: [],
+      deepseek: [],
+      mistral: []
     },
     keyStatus: {},
     usageStats: {},
     clipboardHistory: [],
     logs: []
   };
-  
   await chrome.storage.local.set(storage);
   console.log('Storage initialized');
 }
 
-// Message handler
+// ORIGINAL — Message handler
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   handleMessage(request, sender).then(sendResponse);
   return true;
@@ -74,81 +76,74 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 async function handleMessage(request, sender) {
   try {
     switch (request.action) {
-      
-      // Settings
+
       case 'getSettings':
         const settings = await chrome.storage.local.get('settings');
         return settings.settings || DEFAULT_SETTINGS;
-        
+
       case 'saveSettings':
         await chrome.storage.local.set({ settings: request.settings });
         return { success: true };
-      
-      // Profiles
+
       case 'getProfiles':
         const profiles = await chrome.storage.local.get(['profiles', 'activeProfileId']);
         return {
           profiles: profiles.profiles || [],
           activeProfileId: profiles.activeProfileId || null
         };
-        
+
       case 'saveProfiles':
         await chrome.storage.local.set({
           profiles: request.profiles,
           activeProfileId: request.activeProfileId
         });
         return { success: true };
-      
-      // API Keys
+
       case 'getApiKeys':
         const apiKeys = await chrome.storage.local.get('apiKeys');
         return apiKeys.apiKeys || {};
-        
+
       case 'saveApiKeys':
         await chrome.storage.local.set({ apiKeys: request.apiKeys });
         return { success: true };
-        
+
       case 'testApiKey':
         return await testApiKey(request.provider, request.key);
-      
-      // Key Status
+
       case 'getKeyStatus':
         const keyStatus = await chrome.storage.local.get('keyStatus');
         return keyStatus.keyStatus || {};
-        
+
       case 'updateKeyStatus':
         const current = await chrome.storage.local.get('keyStatus');
         const updated = { ...(current.keyStatus || {}), ...request.status };
         await chrome.storage.local.set({ keyStatus: updated });
         return { success: true };
-      
-      // Usage Stats
+
       case 'getUsageStats':
         const usage = await chrome.storage.local.get('usageStats');
         return usage.usageStats || {};
-        
+
       case 'updateUsage':
         await updateUsage(request);
         return { success: true };
-      
-      // Clipboard
+
       case 'getClipboardHistory':
         const history = await chrome.storage.local.get('clipboardHistory');
         return history.clipboardHistory || [];
-        
+
       case 'saveClipboardHistory':
         await chrome.storage.local.set({ clipboardHistory: request.history });
         return { success: true };
-      
-      // Logs
+
       case 'getLogs':
         const logs = await chrome.storage.local.get('logs');
         return logs.logs || [];
-        
+
       case 'addLog':
         await addLog(request.log);
         return { success: true };
-      
+
       default:
         return { success: false, error: 'Unknown action' };
     }
@@ -158,7 +153,7 @@ async function handleMessage(request, sender) {
   }
 }
 
-// Test API Key
+// ORIGINAL — testApiKey
 async function testApiKey(provider, key) {
   const tests = {
     openai: async () => {
@@ -167,30 +162,36 @@ async function testApiKey(provider, key) {
       });
       return res.ok;
     },
-    
     gemini: async () => {
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
       return res.ok;
     },
-    
     claude: async () => {
       const res = await fetch('https://api.anthropic.com/v1/models', {
-        headers: {
-          'x-api-key': key,
-          'anthropic-version': '2023-06-01'
-        }
+        headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01' }
       });
       return res.ok;
     },
-    
     grok: async () => {
       const res = await fetch('https://api.x.ai/v1/models', {
         headers: { 'Authorization': `Bearer ${key}` }
       });
       return res.ok;
+    },
+    deepseek: async () => {
+      const res = await fetch('https://api.deepseek.com/v1/models', {
+        headers: { 'Authorization': `Bearer ${key}` }
+      });
+      return res.ok;
+    },
+    mistral: async () => {
+      const res = await fetch('https://api.mistral.ai/v1/models', {
+        headers: { 'Authorization': `Bearer ${key}` }
+      });
+      return res.ok;
     }
   };
-  
+
   try {
     if (tests[provider]) {
       const isValid = await tests[provider]();
@@ -202,55 +203,57 @@ async function testApiKey(provider, key) {
   }
 }
 
-// Update usage stats
+// ORIGINAL — updateUsage
 async function updateUsage(request) {
   const { provider, key, tokens, success } = request;
   const stats = await chrome.storage.local.get('usageStats');
   const usage = stats.usageStats || {};
-  
+
   if (!usage[provider]) usage[provider] = {};
   if (!usage[provider][key]) {
-    usage[provider][key] = {
-      tokens: 0,
-      calls: 0,
-      errors: 0,
-      firstUsed: new Date().toISOString()
-    };
+    usage[provider][key] = { tokens: 0, calls: 0, errors: 0, firstUsed: new Date().toISOString() };
   }
-  
+
   usage[provider][key].tokens += tokens || 0;
   usage[provider][key].calls += 1;
   if (!success) usage[provider][key].errors += 1;
   usage[provider][key].lastUsed = new Date().toISOString();
-  
+
   await chrome.storage.local.set({ usageStats: usage });
 }
 
-// Add log
+// ORIGINAL — addLog
 async function addLog(log) {
   const logs = await chrome.storage.local.get('logs');
   const allLogs = logs.logs || [];
-  
-  allLogs.unshift({
-    ...log,
-    timestamp: new Date().toISOString()
-  });
-  
+  allLogs.unshift({ ...log, timestamp: new Date().toISOString() });
   if (allLogs.length > 100) allLogs.pop();
   await chrome.storage.local.set({ logs: allLogs });
 }
 
-// Handle commands
+// FIX: commands handler — ab sare 4 files inject karta hai
 chrome.commands.onCommand.addListener(async (command, tab) => {
   switch (command) {
     case 'trigger-fill':
       try {
+        // Pehle existing content script ko message bhejo
         await chrome.tabs.sendMessage(tab.id, { action: 'triggerFill' });
       } catch (error) {
-        console.log('Trigger fill error:', error);
+        // Content script nahi hai — inject karo (sare files order mein)
+        console.log('Content script nahi mila, inject kar raha...', error);
+        try {
+          await chrome.scripting.insertCSS({ target: { tabId: tab.id }, files: ['styles.css'] }).catch(() => {});
+          for (const file of ['utils.js', 'field-detector.js', 'ai-manager.js', 'content.js']) {
+            await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: [file] });
+          }
+          await new Promise(r => setTimeout(r, 500));
+          await chrome.tabs.sendMessage(tab.id, { action: 'triggerFill' });
+        } catch (injectError) {
+          console.error('Inject failed:', injectError);
+        }
       }
       break;
-      
+
     case 'open-settings':
       chrome.runtime.openOptionsPage();
       break;
